@@ -442,6 +442,15 @@ impl<USB: UsbPeripheral> usb_device::bus::UsbBus for UsbBus<USB> {
                 }
             }
 
+            // Proposed fix for core reset hang on stm32h7 / cortex-m7
+            // https://github.com/stm32-rs/stm32h7xx-hal/issues/503
+            #[cfg(feature = "cortex-m")]
+            {
+                cortex_m::asm::isb();
+                cortex_m::asm::dsb();
+                cortex_m::asm::dmb();
+            }
+
             // Perform core soft-reset
             while read_reg!(otg_global, regs.global(), GRSTCTL, AHBIDL) == 0 {}
             modify_reg!(otg_global, regs.global(), GRSTCTL, CSRST: 1);
